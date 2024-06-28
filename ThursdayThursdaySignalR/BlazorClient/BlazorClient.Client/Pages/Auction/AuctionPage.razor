@@ -1,0 +1,55 @@
+﻿@page "/auctionpage"
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h3>AuctionPage</h3>
+
+@if (UserName is not null)
+{
+    <p>Hello, @UserName!</p>
+}
+
+<p>Welcome to the live auction. Below you can see the current bids and place your own.</p>
+<p>Once a bid on an auction has been received the auction will start.  The highest bid after 10 seconds wins the auction.</p>
+
+<select @bind="selectedItem">
+    <option value="">-- Select an Item --</option>
+    @foreach (var item in auctionItems)
+    {
+        <option value="@item">@item</option>
+    }
+</select>
+
+<input type="number" @bind="selectedBidAmount" placeholder="Bid Amount" />
+
+<AuctionComponent UserName="@UserName" Item="@selectedItem" BidAmount="@selectedBidAmount" />
+
+
+@code {
+
+    private string? UserName;
+    private string? selectedItem;
+    private decimal selectedBidAmount;
+
+
+    private List<string> auctionItems = new ()
+    {
+        "Antique Clock",
+        "Vintage Car",
+        "Painting by Monet",
+        "Diamond Ring"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            UserName = user.Identity?.Name;
+        }
+    }
+
+
+}

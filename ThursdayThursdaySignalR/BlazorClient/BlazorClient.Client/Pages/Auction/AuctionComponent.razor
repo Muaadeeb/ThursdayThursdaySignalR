@@ -1,0 +1,82 @@
+﻿@using BlazorClient.Client.Services.Interfaces
+
+@inject IJSRuntime JSRuntime
+@inject IAuctionService AuctionService
+
+<h3>Auction Bids</h3>
+
+@if (bids.Any())
+{
+    <ul>
+        @foreach (var bid in bids)
+        {
+            <li>@bid</li>
+        }
+    </ul>
+}
+else
+{
+    <p>No bids yet.</p>
+}
+
+<button @onclick="PlaceBid">Place Bid</button>
+
+@code {
+
+    [Parameter]
+    public string UserName { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Item { get; set; } = string.Empty;
+
+    [Parameter]
+    public decimal BidAmount { get; set; } = 0;
+
+    private List<string> bids = new List<string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // AuctionService.BidReceived += HandleBidReceived;
+        // await AuctionService.StartAsync();
+
+        AuctionService.BidReceived += HandleBidReceived;
+        AuctionService.AuctionEnded += HandleAuctionEnded;
+        await AuctionService.StartAsync();
+    }
+
+    private async Task PlaceBid()
+    {
+        await SendBid(Item, UserName, BidAmount);
+    }
+
+    private void HandleBidReceived(string item, string user, decimal bidAmount)
+    {
+        var bidMessage = $"{user} bid {bidAmount:C} on {item}";
+        bids.Add(bidMessage);
+        StateHasChanged();
+    }
+
+    public async Task SendBid(string item, string user, decimal bidAmount)
+    {
+        await AuctionService.SendBid(item, user, bidAmount);
+    }
+
+    private async void HandleAuctionEnded(string item, string winner)
+    {
+        var message = winner == UserName ? $"You have won the auction for {item}" : $"The auction for {item} is over. The winner is {winner}";
+        await JSRuntime.InvokeVoidAsync("alert", message);
+    }
+
+    // public async ValueTask DisposeAsync()
+    // {
+    //     AuctionService.BidReceived -= HandleBidReceived;
+    //     await AuctionService.StopAsync();
+    // }
+
+    public async ValueTask DisposeAsync()
+    {
+        AuctionService.BidReceived -= HandleBidReceived;
+        AuctionService.AuctionEnded -= HandleAuctionEnded;
+        await AuctionService.StopAsync();
+    }
+}
